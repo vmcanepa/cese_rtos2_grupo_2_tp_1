@@ -72,9 +72,15 @@ extern SemaphoreHandle_t hsem_led;
 
 void led_set_colors(bool r, bool g, bool b)
 {
+#ifdef GRUPO2_JEZ
+	  HAL_GPIO_WritePin(LED_RED_PORT, LED_RED_PIN, r ? GPIO_PIN_RESET: GPIO_PIN_SET);
+	  HAL_GPIO_WritePin(LED_GREEN_PORT, LED_GREEN_PIN, g ? GPIO_PIN_RESET: GPIO_PIN_SET);
+	  HAL_GPIO_WritePin(LED_BLUE_PORT, LED_BLUE_PIN, b ? GPIO_PIN_RESET: GPIO_PIN_SET);
+#else
   HAL_GPIO_WritePin(LED_RED_PORT, LED_RED_PIN, r ? GPIO_PIN_SET: GPIO_PIN_RESET);
   HAL_GPIO_WritePin(LED_GREEN_PORT, LED_GREEN_PIN, g ? GPIO_PIN_SET: GPIO_PIN_RESET);
   HAL_GPIO_WritePin(LED_BLUE_PORT, LED_BLUE_PIN, b ? GPIO_PIN_SET: GPIO_PIN_RESET);
+#endif
 }
 
 /********************** external functions definition ************************/
