@@ -57,7 +57,7 @@ typedef enum {
 
 /********************** external functions declaration ***********************/
 
-void task_ao_ui_init(void);
+void ao_ui_init(void);
 bool ao_ui_send_event(msg_event_t msg);
 
 /********************** End of CPP guard *************************************/

@@ -101,7 +101,7 @@ static void task_ui(void *argument)
 	}
 }
 
-void task_ao_ui_init(void)
+void ao_ui_init(void)
 {
 	hao_hqueue = xQueueCreate(QUEUE_LENGTH_, QUEUE_ITEM_SIZE_);
 	while(NULL == hao_hqueue) { }

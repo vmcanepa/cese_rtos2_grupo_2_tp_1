@@ -69,7 +69,7 @@ typedef struct
 
 /********************** external functions declaration ***********************/
 
-void task_led(void* argument);
+void ao_led_init(ao_led_handle_t* hao, ao_led_color color);
 bool ao_led_send(ao_led_handle_t* hao, ao_led_action_t* msg);
 
 /********************** End of CPP guard *************************************/
