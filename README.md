@@ -2,9 +2,9 @@
 
 ## Integrantes
 
-- Jezabel Victoria Danon (Nro. SIU: e2405).
-- Mariano Ariel Deville (Nro. SIU: e2406).
-- Victor Manuel Canepa (Nro. SIU: ext161).
+- **e2405** Jezabel Victoria Danon.
+- **e2406** Mariano Ariel Deville.
+- **ext161** Victor Manuel Canepa.
 
 ## Video:
 << aca irá el link al video. >>
