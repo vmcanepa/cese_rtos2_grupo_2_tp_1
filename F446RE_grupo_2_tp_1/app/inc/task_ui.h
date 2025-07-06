@@ -45,12 +45,20 @@ extern "C" {
 /********************** macros ***********************************************/
 
 /********************** typedef **********************************************/
+typedef enum
+{
+  MSG_EVENT_BUTTON_PULSE,
+  MSG_EVENT_BUTTON_SHORT,
+  MSG_EVENT_BUTTON_LONG,
+  MSG_EVENT__N,
+} msg_event_t;
 
 /********************** external data declaration ****************************/
 
 /********************** external functions declaration ***********************/
 
 void task_ui(void* argument);
+bool ao_ui_send_event(msg_event_t msg);
 
 /********************** End of CPP guard *************************************/
 #ifdef __cplusplus

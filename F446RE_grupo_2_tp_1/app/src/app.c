@@ -46,7 +46,6 @@
 
 /********************** macros and definitions *******************************/
 
-
 /********************** internal data declaration ****************************/
 
 /********************** internal functions declaration ***********************/
@@ -55,25 +54,19 @@
 
 /********************** external data declaration *****************************/
 
-SemaphoreHandle_t hsem_button;
-SemaphoreHandle_t hsem_led;
+ao_led_handle_t led_red, led_green, led_blue;
+
+//SemaphoreHandle_t hsem_button;
+//SemaphoreHandle_t hsem_led;
 
 /********************** external functions definition ************************/
 void app_init(void)
 {
-  hsem_button = xSemaphoreCreateBinary();
-  while(NULL == hsem_button)
-  {
-
-  }
-
-  hsem_led = xSemaphoreCreateBinary();
-  while(NULL == hsem_led)
-  {
-
-  }
 
   BaseType_t status;
+  led_red.color = AO_LED_COLOR_RED;
+  led_green.color = AO_LED_COLOR_GREEN;
+  led_blue.color = AO_LED_COLOR_BLUE;
 
   status = xTaskCreate(task_button, "task_button", 128, NULL, tskIDLE_PRIORITY, NULL);
   while (pdPASS != status)
@@ -87,7 +80,19 @@ void app_init(void)
     // error
   }
 
-  status = xTaskCreate(task_led, "task_led", 128, NULL, tskIDLE_PRIORITY, NULL);
+  status = xTaskCreate(task_led, "task_led", 128, (void* const)&led_red, tskIDLE_PRIORITY+1, NULL);
+  while (pdPASS != status)
+  {
+    // error
+  }
+
+  status = xTaskCreate(task_led, "task_led", 128, (void* const)&led_green, tskIDLE_PRIORITY+1, NULL);
+  while (pdPASS != status)
+  {
+    // error
+  }
+
+  status = xTaskCreate(task_led, "task_led", 128, (void* const)&led_blue, tskIDLE_PRIORITY+1, NULL);
   while (pdPASS != status)
   {
     // error

@@ -44,6 +44,8 @@
 #include "logger.h"
 #include "dwt.h"
 
+#include "task_ui.h"
+
 /********************** macros and definitions *******************************/
 
 #define TASK_PERIOD_MS_           (50)
@@ -132,13 +134,16 @@ void task_button(void* argument)
         break;
       case BUTTON_TYPE_PULSE:
         LOGGER_INFO("button pulse");
-        xSemaphoreGive(hsem_button);
+        ao_ui_send_event(MSG_EVENT_BUTTON_PULSE);
+//        xSemaphoreGive(hsem_button);
         break;
       case BUTTON_TYPE_SHORT:
         LOGGER_INFO("button short");
+        ao_ui_send_event(MSG_EVENT_BUTTON_SHORT);
         break;
       case BUTTON_TYPE_LONG:
         LOGGER_INFO("button long");
+        ao_ui_send_event(MSG_EVENT_BUTTON_LONG);
         break;
       default:
         LOGGER_INFO("button error");

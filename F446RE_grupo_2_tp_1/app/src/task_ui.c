@@ -44,7 +44,12 @@
 #include "logger.h"
 #include "dwt.h"
 
+#include "task_ui.h"
+#include "task_led.h"
 /********************** macros and definitions *******************************/
+
+#define QUEUE_LENGTH_            (1)
+#define QUEUE_ITEM_SIZE_         (sizeof(msg_event_t))
 
 /********************** internal data declaration ****************************/
 
@@ -52,10 +57,16 @@
 
 /********************** internal data definition *****************************/
 
+static QueueHandle_t hao_hqueue;
+
 /********************** external data definition *****************************/
 
 extern SemaphoreHandle_t hsem_button;
 extern SemaphoreHandle_t hsem_led;
+
+extern ao_led_handle_t led_red;
+extern ao_led_handle_t led_green;
+extern ao_led_handle_t led_blue;
 
 /********************** internal functions definition ************************/
 
@@ -63,14 +74,50 @@ extern SemaphoreHandle_t hsem_led;
 
 void task_ui(void *argument)
 {
+	// esta parte no iria en la task del OA sino en su funcion init
+	hao_hqueue = xQueueCreate(QUEUE_LENGTH_, QUEUE_ITEM_SIZE_);
+	while(NULL == hao_hqueue)
+	{
+	// error
+	}
+
   while (true)
   {
-    if(pdTRUE == xSemaphoreTake(hsem_button, portMAX_DELAY))
-    {
-      LOGGER_INFO("ui led activate");
-      xSemaphoreGive(hsem_led);
-    }
+	  msg_event_t event_msg;
+	  if (pdPASS == xQueueReceive(hao_hqueue, &event_msg, portMAX_DELAY)) {
+
+			switch (event_msg)
+			{
+				case MSG_EVENT_BUTTON_PULSE:
+					LOGGER_INFO("[UI] led red %d", AO_LED_MESSAGE_ON);
+					ao_led_send(&led_red, AO_LED_MESSAGE_ON);
+					break;
+				case MSG_EVENT_BUTTON_SHORT:
+					LOGGER_INFO("[UI] led green");
+					ao_led_send(&led_green, AO_LED_MESSAGE_ON);
+					break;
+				case MSG_EVENT_BUTTON_LONG:
+					LOGGER_INFO("[UI] led blue");
+					ao_led_send(&led_blue, AO_LED_MESSAGE_ON);
+					break;
+				default:
+					break;
+			}
+		}
+		LOGGER_INFO("[UI] led activate");
   }
+}
+
+
+bool ao_ui_send_event(msg_event_t msg) {
+
+	BaseType_t status = xQueueSend(hao_hqueue, &msg, 0);
+	if (status != pdPASS){
+		LOGGER_INFO("[UI] Cola llena: evento %d perdido", msg);
+	} else {
+		LOGGER_INFO("[UI] Evento enviado: %d", msg);
+	}
+	return (status == pdPASS);
 }
 
 /********************** end of file ******************************************/
