@@ -56,9 +56,6 @@
 
 ao_led_handle_t led_red, led_green, led_blue;
 
-//SemaphoreHandle_t hsem_button;
-//SemaphoreHandle_t hsem_led;
-
 /********************** external functions definition ************************/
 void app_init(void)
 {

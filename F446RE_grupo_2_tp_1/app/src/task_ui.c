@@ -46,6 +46,7 @@
 
 #include "task_ui.h"
 #include "task_led.h"
+
 /********************** macros and definitions *******************************/
 
 #define QUEUE_LENGTH_            (1)
@@ -61,9 +62,6 @@ static QueueHandle_t hao_hqueue;
 
 /********************** external data definition *****************************/
 
-//extern SemaphoreHandle_t hsem_button;
-//extern SemaphoreHandle_t hsem_led;
-
 extern ao_led_handle_t led_red;
 extern ao_led_handle_t led_green;
 extern ao_led_handle_t led_blue;
@@ -72,18 +70,7 @@ extern ao_led_handle_t led_blue;
 
 /********************** external functions definition ************************/
 
-
-void task_ao_ui_init(void)
-{
-	hao_hqueue = xQueueCreate(QUEUE_LENGTH_, QUEUE_ITEM_SIZE_);
-	while(NULL == hao_hqueue) { }
-
-	BaseType_t status;
-	status = xTaskCreate(task_ui, "task_ao_ui", 128, NULL, tskIDLE_PRIORITY, NULL);
-	while (pdPASS != status) { }
-}
-
-void task_ui(void *argument)
+static void task_ui(void *argument)
 {
 
 	while (true) {
@@ -112,6 +99,16 @@ void task_ui(void *argument)
 		}
 		LOGGER_INFO("[UI] led activate");
 	}
+}
+
+void task_ao_ui_init(void)
+{
+	hao_hqueue = xQueueCreate(QUEUE_LENGTH_, QUEUE_ITEM_SIZE_);
+	while(NULL == hao_hqueue) { }
+
+	BaseType_t status;
+	status = xTaskCreate(task_ui, "task_ao_ui", 128, NULL, tskIDLE_PRIORITY, NULL);
+	while (pdPASS != status) { }
 }
 
 bool ao_ui_send_event(msg_event_t msg) {
