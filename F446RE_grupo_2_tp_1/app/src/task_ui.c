@@ -49,8 +49,8 @@
 
 /********************** macros and definitions *******************************/
 
-#define QUEUE_LENGTH_            (1)
-#define QUEUE_ITEM_SIZE_         (sizeof(msg_event_t))
+#define QUEUE_LENGTH_ 		(1)
+#define QUEUE_ITEM_SIZE_ 	(sizeof(msg_event_t))
 
 /********************** internal data declaration ****************************/
 
@@ -73,51 +73,55 @@ extern ao_led_handle_t led_blue;
 static void task_ui(void *argument)
 {
 
-	while (true) {
-
+	while (true)
+	{
 		msg_event_t event_msg;
 
-		if (pdPASS == xQueueReceive(hao_hqueue, &event_msg, portMAX_DELAY)) {
+		if (pdPASS == xQueueReceive(hao_hqueue, &event_msg, portMAX_DELAY))
+		{
 
-			switch (event_msg) {
-
+			switch (event_msg)
+			{
 				case MSG_EVENT_BUTTON_PULSE:
-					LOGGER_INFO("[UI] led red %d", AO_LED_MESSAGE_ON);
+					LOGGER_INFO("[UI] Enviando encendido de led rojo");
 					ao_led_send(&led_red, AO_LED_MESSAGE_ON);
 					break;
 				case MSG_EVENT_BUTTON_SHORT:
-					LOGGER_INFO("[UI] led green");
+					LOGGER_INFO("[UI] Enviando encendido de led verde");
 					ao_led_send(&led_green, AO_LED_MESSAGE_ON);
 					break;
 				case MSG_EVENT_BUTTON_LONG:
-					LOGGER_INFO("[UI] led blue");
+					LOGGER_INFO("[UI] Enviando encendido de led azul");
 					ao_led_send(&led_blue, AO_LED_MESSAGE_ON);
 					break;
 				default:
 					break;
 			}
 		}
-		LOGGER_INFO("[UI] led activate");
 	}
 }
 
 void ao_ui_init(void)
 {
 	hao_hqueue = xQueueCreate(QUEUE_LENGTH_, QUEUE_ITEM_SIZE_);
-	while(NULL == hao_hqueue) { }
+	while (NULL == hao_hqueue) { /*error*/ }
 
 	BaseType_t status;
 	status = xTaskCreate(task_ui, "task_ao_ui", 128, NULL, tskIDLE_PRIORITY, NULL);
-	while (pdPASS != status) { }
+	while (pdPASS != status) { /*error*/ }
 }
 
-bool ao_ui_send_event(msg_event_t msg) {
+bool ao_ui_send_event(msg_event_t msg)
+{
 
 	BaseType_t status = xQueueSend(hao_hqueue, &msg, 0);
-	if (status != pdPASS) {
+	if (status != pdPASS)
+	{
 
 		LOGGER_INFO("[UI] Cola llena: evento %d perdido", msg);
-	} else {
+	}
+	else
+	{
 
 		LOGGER_INFO("[UI] Evento enviado: %d", msg);
 	}
