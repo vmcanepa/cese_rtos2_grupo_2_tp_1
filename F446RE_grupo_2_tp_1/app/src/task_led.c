@@ -53,12 +53,8 @@
 #define QUEUE_LED_LENGTH_ 		(1)
 #define QUEUE_LED_ITEM_SIZE_ 	(sizeof(ao_led_action_t))
 
-#define LED_ON_MS 				(1000)
-
 /********************** internal data declaration ****************************/
-
 /********************** internal functions declaration ***********************/
-
 /********************** internal data definition *****************************/
 
 typedef enum
@@ -73,39 +69,33 @@ typedef enum
 
 static GPIO_TypeDef *led_port_[] = {LED_RED_PORT, LED_GREEN_PORT, LED_BLUE_PORT};
 static uint16_t led_pin_[] = {LED_RED_PIN, LED_GREEN_PIN, LED_BLUE_PIN};
+
 /********************** external data definition *****************************/
-
 /********************** internal functions definition ************************/
-
 /********************** external functions definition ************************/
 
-static void task_led(void *argument)
-{
+static void task_led(void *argument) {
 
-	ao_led_handle_t *hao = (ao_led_handle_t *)argument;
+	ao_led_handle_t * hao = (ao_led_handle_t*)argument;
 
 	LOGGER_INFO("[LED] Cola de mensajes creada: color=%d, hqueue=%p", hao->color, (void *)hao->hqueue);
-	HAL_GPIO_WritePin(led_port_[hao->color], led_pin_[hao->color], GPIO_PIN_SET); // que arranque apagado (en pullup)
+	HAL_GPIO_WritePin(led_port_[hao->color], led_pin_[hao->color], LED_OFF);
 
-	while (true)
-	{
+	while (true) {
+
 		ao_led_action_t msg;
 
-		if (pdPASS == xQueueReceive(hao->hqueue, &msg, portMAX_DELAY))
-		{
+		if (pdPASS == xQueueReceive(hao->hqueue, &msg, portMAX_DELAY)) {
 
 			LOGGER_INFO("[LED] LED %d: mensaje recibido (msg=%d)", hao->color, msg);
-
-			HAL_GPIO_WritePin(led_port_[hao->color], led_pin_[hao->color], GPIO_PIN_RESET); // enciende (pullup)
-			vTaskDelay((TickType_t)((LED_ON_MS) / portTICK_PERIOD_MS));
-			HAL_GPIO_WritePin(led_port_[hao->color], led_pin_[hao->color], GPIO_PIN_SET); // apaga (en pullup)
+			HAL_GPIO_WritePin(led_port_[hao->color], led_pin_[hao->color], LED_ON);
 		}
 		vTaskDelay((TickType_t)(TASK_PERIOD_MS_ / portTICK_PERIOD_MS));
+		HAL_GPIO_WritePin(led_port_[hao->color], led_pin_[hao->color], LED_OFF);
 	}
 }
 
-void ao_led_init(ao_led_handle_t *hao, ao_led_color color)
-{
+void ao_led_init(ao_led_handle_t *hao, ao_led_color color) {
 
 	hao->color = color;
 
@@ -117,19 +107,15 @@ void ao_led_init(ao_led_handle_t *hao, ao_led_color color)
 	while (pdPASS != status) { /*error*/ }
 }
 
-bool ao_led_send(ao_led_handle_t *hao, ao_led_action_t *msg)
-{
+bool ao_led_send(ao_led_handle_t *hao, ao_led_action_t *msg) {
 
 	LOGGER_INFO("[LED] Enviando mensaje a cola: color=%d, hqueue=%p", hao->color, (void *)hao->hqueue);
 	BaseType_t status = xQueueSend(hao->hqueue, &msg, 0);
 
-	if (status != pdPASS)
-	{
+	if (status != pdPASS) {
 
 		LOGGER_INFO("[LED] LED %d: cola llena (hqueue=%p), mensaje perdido (msg=%d)", hao->color, (void *)hao->hqueue, (int)msg);
-	}
-	else
-	{
+	} else {
 
 		LOGGER_INFO("[LED] LED %d: mensaje enviado (msg=%d)", hao->color, (int)msg);
 	}
