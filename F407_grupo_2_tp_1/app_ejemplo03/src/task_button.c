@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Sebastian Bedin <sebabedin@gmail.com>.
+ * Copyright (c) 2024 Sebastian Bedin <sebabedin@gmail.com>.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,11 @@
  * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
+ *
+ * @file   : task_button.c
+ * @date   : Feb 17, 2023
  * @author : Sebastian Bedin <sebabedin@gmail.com>
+ * @version	v1.0.0
  */
 
 /********************** inclusions *******************************************/
@@ -44,13 +48,16 @@
 #include "logger.h"
 #include "dwt.h"
 
-#include "task_ui.h"
-#include "task_led.h"
+#include "ao_ui.h"
 
 /********************** macros and definitions *******************************/
 
-#define QUEUE_LENGTH_ 		(1)
-#define QUEUE_ITEM_SIZE_ 	(sizeof(msg_event_t))
+#define TASK_PERIOD_MS_           (50)
+
+#define BUTTON_PERIOD_MS_         (TASK_PERIOD_MS_)
+#define BUTTON_PULSE_TIMEOUT_     (200)
+#define BUTTON_SHORT_TIMEOUT_     (1000)
+#define BUTTON_LONG_TIMEOUT_      (2000)
 
 /********************** internal data declaration ****************************/
 
@@ -58,74 +65,93 @@
 
 /********************** internal data definition *****************************/
 
-static QueueHandle_t hao_hqueue;
-
 /********************** external data definition *****************************/
 
-extern ao_led_handle_t led_red;
-extern ao_led_handle_t led_green;
-extern ao_led_handle_t led_blue;
+extern SemaphoreHandle_t hsem_button;
 
 /********************** internal functions definition ************************/
 
+typedef enum
+{
+  BUTTON_TYPE_NONE,
+  BUTTON_TYPE_PULSE,
+  BUTTON_TYPE_SHORT,
+  BUTTON_TYPE_LONG,
+  BUTTON_TYPE__N,
+} button_type_t;
+
+static struct
+{
+    uint32_t counter;
+} button;
+
+static void button_init_(void)
+{
+  button.counter = 0;
+}
+
+static button_type_t button_process_state_(bool value)
+{
+  button_type_t ret = BUTTON_TYPE_NONE;
+  if(value)
+  {
+    button.counter += BUTTON_PERIOD_MS_;
+  }
+  else
+  {
+    if(BUTTON_LONG_TIMEOUT_ <= button.counter)
+    {
+      ret = BUTTON_TYPE_LONG;
+    }
+    else if(BUTTON_SHORT_TIMEOUT_ <= button.counter)
+    {
+      ret = BUTTON_TYPE_SHORT;
+    }
+    else if(BUTTON_PULSE_TIMEOUT_ <= button.counter)
+    {
+      ret = BUTTON_TYPE_PULSE;
+    }
+    button.counter = 0;
+  }
+  return ret;
+}
+
 /********************** external functions definition ************************/
 
-static void task_ui(void *argument)
+void task_button(void* argument)
 {
+  button_init_();
 
-	while (true)
-	{
-		msg_event_t event_msg;
+  while(true)
+  {
+    GPIO_PinState button_state;
+    button_state = HAL_GPIO_ReadPin(BTN_PORT, BTN_PIN);
 
-		if (pdPASS == xQueueReceive(hao_hqueue, &event_msg, portMAX_DELAY))
-		{
+    button_type_t button_type;
+    button_type = button_process_state_(button_state);
 
-			switch (event_msg)
-			{
-				case MSG_EVENT_BUTTON_PULSE:
-					LOGGER_INFO("[UI] Enviando encendido de led rojo");
-					ao_led_send(&led_red, AO_LED_MESSAGE_ON);
-					break;
-				case MSG_EVENT_BUTTON_SHORT:
-					LOGGER_INFO("[UI] Enviando encendido de led verde");
-					ao_led_send(&led_green, AO_LED_MESSAGE_ON);
-					break;
-				case MSG_EVENT_BUTTON_LONG:
-					LOGGER_INFO("[UI] Enviando encendido de led azul");
-					ao_led_send(&led_blue, AO_LED_MESSAGE_ON);
-					break;
-				default:
-					break;
-			}
-		}
-	}
-}
+    switch (button_type) {
+      case BUTTON_TYPE_NONE:
+        break;
+      case BUTTON_TYPE_PULSE:
+        LOGGER_INFO("button pulse");
+        ao_ui_send_event(MSG_EVENT_BUTTON_PULSE);
+        break;
+      case BUTTON_TYPE_SHORT:
+        LOGGER_INFO("button short");
+        ao_ui_send_event(MSG_EVENT_BUTTON_SHORT);
+        break;
+      case BUTTON_TYPE_LONG:
+        LOGGER_INFO("button long");
+        ao_ui_send_event(MSG_EVENT_BUTTON_LONG);
+        break;
+      default:
+        LOGGER_INFO("button error");
+        break;
+    }
 
-void ao_ui_init(void)
-{
-	hao_hqueue = xQueueCreate(QUEUE_LENGTH_, QUEUE_ITEM_SIZE_);
-	while (NULL == hao_hqueue) { /*error*/ }
-
-	BaseType_t status;
-	status = xTaskCreate(task_ui, "task_ao_ui", 128, NULL, tskIDLE_PRIORITY, NULL);
-	while (pdPASS != status) { /*error*/ }
-}
-
-bool ao_ui_send_event(msg_event_t msg)
-{
-
-	BaseType_t status = xQueueSend(hao_hqueue, &msg, 0);
-	if (status != pdPASS)
-	{
-
-		LOGGER_INFO("[UI] Cola llena: evento %d perdido", msg);
-	}
-	else
-	{
-
-		LOGGER_INFO("[UI] Evento enviado: %d", msg);
-	}
-	return (status == pdPASS);
+    vTaskDelay((TickType_t)(TASK_PERIOD_MS_ / portTICK_PERIOD_MS));
+  }
 }
 
 /********************** end of file ******************************************/

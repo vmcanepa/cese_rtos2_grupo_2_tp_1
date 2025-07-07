@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Sebastian Bedin <sebabedin@gmail.com>.
+ * Copyright (c) 2023 Juan Manuel Cruz <jcruz@fi.uba.ar>.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,52 +29,51 @@
  * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @author : Sebastian Bedin <sebabedin@gmail.com>
+ * @file   : app.h
+ * @date   : Set 26, 2023
+ * @author : Juan Manuel Cruz <jcruz@fi.uba.ar> <jcruz@frba.utn.edu.ar>
+ * @version	v1.0.0
  */
+
+#ifndef APP_INC_APP_H_
+#define APP_INC_APP_H_
+
+/********************** CPP guard ********************************************/
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /********************** inclusions *******************************************/
 
-#include "main.h"
-#include "cmsis_os.h"
-#include "logger.h"
-#include "dwt.h"
-#include "board.h"
+/********************** macros ***********************************************/
+#define TEST_0 (0)
+#define TEST_1 (1)
+#define TEST_2 (2)
 
-#include "task_button.h"
-#include "task_led.h"
-#include "task_ui.h"
+#define TEST_X (TEST_0)
 
-/********************** macros and definitions *******************************/
+/********************** typedef **********************************************/
 
-/********************** internal data declaration ****************************/
+/********************** external data declaration ****************************/
+/* Declare a variable of type QueueHandle_t. This is used to reference queues*/
 
-/********************** internal functions declaration ***********************/
+/* Declare a variable of type xSemaphoreHandle (binary or counting) or mutex. 
+ * This is used to reference the semaphore that is used to synchronize a thread
+ * with other thread or to ensure mutual exclusive access to...*/
 
-/********************** internal data definition *****************************/
+/* Declare a variable of type TaskHandle_t. This is used to reference threads. */
+extern TaskHandle_t task_a_h;
+extern TaskHandle_t task_b_h;
+extern TaskHandle_t task_c_h;
 
-/********************** external data declaration *****************************/
+/********************** external functions declaration ***********************/
+void app_init(void);
 
-ao_led_handle_t led_red, led_green, led_blue;
-
-/********************** external functions definition ************************/
-void app_init(void)
-{
-
-	BaseType_t status;
-
-	ao_ui_init();
-
-	ao_led_init(&led_red, AO_LED_COLOR_RED);
-	ao_led_init(&led_green, AO_LED_COLOR_GREEN);
-	ao_led_init(&led_blue, AO_LED_COLOR_BLUE);
-
-	status = xTaskCreate(task_button, "task_button", 128, NULL, tskIDLE_PRIORITY, NULL);
-	while (pdPASS != status) { }
-
-
-	LOGGER_INFO("app init");
-
-	cycle_counter_init();
+/********************** End of CPP guard *************************************/
+#ifdef __cplusplus
 }
+#endif
+
+#endif /* APP_INC_APP_H_ */
 
 /********************** end of file ******************************************/

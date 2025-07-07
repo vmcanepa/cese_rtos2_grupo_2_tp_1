@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Sebastian Bedin <sebabedin@gmail.com>.
+ * Copyright (c) 2024 Sebastian Bedin <sebabedin@gmail.com>.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,11 +29,14 @@
  * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
+ * @file   : task_button.h
+ * @date   : Feb 17, 2023
  * @author : Sebastian Bedin <sebabedin@gmail.com>
+ * @version	v1.0.0
  */
 
-#ifndef TASK_LED_H_
-#define TASK_LED_H_
+#ifndef TASK_BUTTTON_H_
+#define TASK_BUTTTON_H_
 
 /********************** CPP guard ********************************************/
 #ifdef __cplusplus
@@ -45,38 +48,18 @@ extern "C" {
 /********************** macros ***********************************************/
 
 /********************** typedef **********************************************/
-typedef enum
-{
-  AO_LED_MESSAGE_ON,
-  AO_LED_MESSAGE_OFF,
-//  AO_LED_MESSAGE_BLINK,
-  AO_LED_MESSAGE__N,
-} ao_led_action_t;
 
-typedef enum
-{
-  AO_LED_COLOR_RED,
-  AO_LED_COLOR_GREEN,
-  AO_LED_COLOR_BLUE,
-} ao_led_color;
-
-typedef struct
-{
-    ao_led_color color;
-    QueueHandle_t hqueue;
-} ao_led_handle_t;
 /********************** external data declaration ****************************/
 
 /********************** external functions declaration ***********************/
 
-void ao_led_init(ao_led_handle_t* hao, ao_led_color color);
-bool ao_led_send(ao_led_handle_t* hao, ao_led_action_t* msg);
+void task_button(void* argument);
 
 /********************** End of CPP guard *************************************/
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TASK_LED_H_ */
+#endif /* TASK_BUTTTON_H_ */
 /********************** end of file ******************************************/
 
