@@ -44,14 +44,16 @@
 #include "logger.h"
 #include "dwt.h"
 
+#include "task_ui.h"
+
 /********************** macros and definitions *******************************/
 
-#define TASK_PERIOD_MS_           (50)
+#define TASK_PERIOD_MS_ 		(50)
 
-#define BUTTON_PERIOD_MS_         (TASK_PERIOD_MS_)
-#define BUTTON_PULSE_TIMEOUT_     (200)
-#define BUTTON_SHORT_TIMEOUT_     (1000)
-#define BUTTON_LONG_TIMEOUT_      (2000)
+#define BUTTON_PERIOD_MS_ 		(TASK_PERIOD_MS_)
+#define BUTTON_PULSE_TIMEOUT_ 	(200)
+#define BUTTON_SHORT_TIMEOUT_ 	(1000)
+#define BUTTON_LONG_TIMEOUT_ 	(2000)
 
 /********************** internal data declaration ****************************/
 
@@ -61,89 +63,93 @@
 
 /********************** external data definition *****************************/
 
-extern SemaphoreHandle_t hsem_button;
-
 /********************** internal functions definition ************************/
 
 typedef enum
 {
-  BUTTON_TYPE_NONE,
-  BUTTON_TYPE_PULSE,
-  BUTTON_TYPE_SHORT,
-  BUTTON_TYPE_LONG,
-  BUTTON_TYPE__N,
+	BUTTON_TYPE_NONE,
+	BUTTON_TYPE_PULSE,
+	BUTTON_TYPE_SHORT,
+	BUTTON_TYPE_LONG,
+	BUTTON_TYPE__N,
 } button_type_t;
 
 static struct
 {
-    uint32_t counter;
+	uint32_t counter;
 } button;
 
 static void button_init_(void)
 {
-  button.counter = 0;
+	button.counter = 0;
 }
 
 static button_type_t button_process_state_(bool value)
 {
-  button_type_t ret = BUTTON_TYPE_NONE;
-  if(value)
-  {
-    button.counter += BUTTON_PERIOD_MS_;
-  }
-  else
-  {
-    if(BUTTON_LONG_TIMEOUT_ <= button.counter)
-    {
-      ret = BUTTON_TYPE_LONG;
-    }
-    else if(BUTTON_SHORT_TIMEOUT_ <= button.counter)
-    {
-      ret = BUTTON_TYPE_SHORT;
-    }
-    else if(BUTTON_PULSE_TIMEOUT_ <= button.counter)
-    {
-      ret = BUTTON_TYPE_PULSE;
-    }
-    button.counter = 0;
-  }
-  return ret;
+	button_type_t ret = BUTTON_TYPE_NONE;
+	if (value)
+	{
+		button.counter += BUTTON_PERIOD_MS_;
+	}
+	else
+	{
+		if (BUTTON_LONG_TIMEOUT_ <= button.counter)
+		{
+			ret = BUTTON_TYPE_LONG;
+		}
+		else if (BUTTON_SHORT_TIMEOUT_ <= button.counter)
+		{
+			ret = BUTTON_TYPE_SHORT;
+		}
+		else if (BUTTON_PULSE_TIMEOUT_ <= button.counter)
+		{
+			ret = BUTTON_TYPE_PULSE;
+		}
+		button.counter = 0;
+	}
+	return ret;
 }
 
 /********************** external functions definition ************************/
 
-void task_button(void* argument)
+void task_button(void *argument)
 {
-  button_init_();
+	button_init_();
 
-  while(true)
-  {
-    GPIO_PinState button_state;
-    button_state = HAL_GPIO_ReadPin(BTN_PORT, BTN_PIN);
+	while (true)
+	{
+		GPIO_PinState button_state;
+		button_state = HAL_GPIO_ReadPin(BTN_PORT, BTN_PIN);
+#ifdef GRUPO2_JEZ
+		button_state = !button_state; // boton pullup
+#endif
 
-    button_type_t button_type;
-    button_type = button_process_state_(button_state);
+		button_type_t button_type;
+		button_type = button_process_state_(button_state);
 
-    switch (button_type) {
-      case BUTTON_TYPE_NONE:
-        break;
-      case BUTTON_TYPE_PULSE:
-        LOGGER_INFO("button pulse");
-        xSemaphoreGive(hsem_button);
-        break;
-      case BUTTON_TYPE_SHORT:
-        LOGGER_INFO("button short");
-        break;
-      case BUTTON_TYPE_LONG:
-        LOGGER_INFO("button long");
-        break;
-      default:
-        LOGGER_INFO("button error");
-        break;
-    }
+		switch (button_type)
+		{
+		case BUTTON_TYPE_NONE:
+			break;
+		case BUTTON_TYPE_PULSE:
+			LOGGER_INFO("[BTN] pulso enviado");
+			ao_ui_send_event(MSG_EVENT_BUTTON_PULSE);
+			break;
+		case BUTTON_TYPE_SHORT:
+			LOGGER_INFO("[BTN] corto enviado");
+			ao_ui_send_event(MSG_EVENT_BUTTON_SHORT);
+			break;
+		case BUTTON_TYPE_LONG:
+			LOGGER_INFO("[BTN] largo enviado");
+			ao_ui_send_event(MSG_EVENT_BUTTON_LONG);
+			break;
+		default:
+			LOGGER_INFO("[BTN] error");
+			break;
+		}
 
-    vTaskDelay((TickType_t)(TASK_PERIOD_MS_ / portTICK_PERIOD_MS));
-  }
+		vTaskDelay((TickType_t)(TASK_PERIOD_MS_ / portTICK_PERIOD_MS));
+	}
 }
 
 /********************** end of file ******************************************/

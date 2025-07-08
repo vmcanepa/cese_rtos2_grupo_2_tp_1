@@ -44,83 +44,81 @@
 #include "logger.h"
 #include "dwt.h"
 
+#include "task_led.h"
+
 /********************** macros and definitions *******************************/
 
-#define TASK_PERIOD_MS_           (1000)
+#define TASK_PERIOD_MS_ 		(1000)
+
+#define QUEUE_LED_LENGTH_ 		(1)
+#define QUEUE_LED_ITEM_SIZE_ 	(sizeof(ao_led_message_t))
 
 /********************** internal data declaration ****************************/
-
 /********************** internal functions declaration ***********************/
-
 /********************** internal data definition *****************************/
 
 typedef enum
 {
-  LED_COLOR_NONE,
-  LED_COLOR_RED,
-  LED_COLOR_GREEN,
-  LED_COLOR_BLUE,
-  LED_COLOR_WHITE,
-  LED_COLOR__N,
+	LED_COLOR_NONE,
+	LED_COLOR_RED,
+	LED_COLOR_GREEN,
+	LED_COLOR_BLUE,
+	LED_COLOR_WHITE,
+	LED_COLOR__N,
 } led_color_t;
 
+static GPIO_TypeDef *led_port_[] = {LED_RED_PORT, LED_GREEN_PORT, LED_BLUE_PORT};
+static uint16_t led_pin_[] = {LED_RED_PIN, LED_GREEN_PIN, LED_BLUE_PIN};
+
 /********************** external data definition *****************************/
-
-extern SemaphoreHandle_t hsem_led;
-
 /********************** internal functions definition ************************/
-
-void led_set_colors(bool r, bool g, bool b)
-{
-  HAL_GPIO_WritePin(LED_RED_PORT, LED_RED_PIN, r ? GPIO_PIN_SET: GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(LED_GREEN_PORT, LED_GREEN_PIN, g ? GPIO_PIN_SET: GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(LED_BLUE_PORT, LED_BLUE_PIN, b ? GPIO_PIN_SET: GPIO_PIN_RESET);
-}
-
 /********************** external functions definition ************************/
 
-void task_led(void *argument)
-{
-  while (true)
-  {
-    led_color_t color;
+static void task_led(void *argument) {
 
-    if(pdTRUE == xSemaphoreTake(hsem_led, 0))
-    {
-      color = LED_COLOR_RED;
-    }
-    else
-    {
-      color = LED_COLOR_NONE;
-    }
+	ao_led_handle_t * hao = (ao_led_handle_t*)argument;
 
-    switch (color)
-    {
-      case LED_COLOR_NONE:
-        led_set_colors(false, false, false);
-        break;
-      case LED_COLOR_RED:
-        LOGGER_INFO("led red");
-        led_set_colors(true, false, false);
-        break;
-      case LED_COLOR_GREEN:
-        LOGGER_INFO("led green");
-        led_set_colors(false, true, false);
-        break;
-      case LED_COLOR_BLUE:
-        LOGGER_INFO("led blue");
-        led_set_colors(false, false, true);
-        break;
-      case LED_COLOR_WHITE:
-        LOGGER_INFO("led white");
-        led_set_colors(true, true, true);
-        break;
-      default:
-        break;
-    }
+	LOGGER_INFO("[LED] Cola de mensajes creada: color=%d, hqueue=%p", hao->color, (void *)hao->hqueue);
+	HAL_GPIO_WritePin(led_port_[hao->color], led_pin_[hao->color], LED_OFF);
 
-    vTaskDelay((TickType_t)(TASK_PERIOD_MS_ / portTICK_PERIOD_MS));
-  }
+	while (true) {
+
+		ao_led_message_t msg;
+
+		if (pdPASS == xQueueReceive(hao->hqueue, &msg, portMAX_DELAY)) {
+
+			LOGGER_INFO("[LED] LED %d: mensaje recibido (msg=%d)", hao->color, msg);
+			HAL_GPIO_WritePin(led_port_[hao->color], led_pin_[hao->color], LED_ON);
+		}
+		vTaskDelay((TickType_t)(TASK_PERIOD_MS_ / portTICK_PERIOD_MS));
+		HAL_GPIO_WritePin(led_port_[hao->color], led_pin_[hao->color], LED_OFF);
+	}
 }
 
+void ao_led_init(ao_led_handle_t *hao, ao_led_color color) {
+
+	hao->color = color;
+
+	hao->hqueue = xQueueCreate(QUEUE_LED_LENGTH_, QUEUE_LED_ITEM_SIZE_);
+	while (NULL == hao->hqueue) { /*error*/ }
+
+	BaseType_t status;
+	status = xTaskCreate(task_led, "task_ao_led", 128, (void *const)hao, tskIDLE_PRIORITY, NULL);
+	while (pdPASS != status) { /*error*/ }
+}
+
+bool ao_led_send(ao_led_handle_t *hao, ao_led_message_t *msg) {
+
+	LOGGER_INFO("[LED] Enviando mensaje a cola: color=%d, hqueue=%p", hao->color, (void *)hao->hqueue);
+	BaseType_t status = xQueueSend(hao->hqueue, (void *)msg, 0);
+
+	if (status != pdPASS) {
+
+		LOGGER_INFO("[LED] LED %d: cola llena (hqueue=%p), mensaje perdido (msg=%d)", hao->color, (void *)hao->hqueue, (int)msg);
+	} else {
+
+		LOGGER_INFO("[LED] LED %d: mensaje enviado (msg=%d)", hao->color, (int)msg);
+	}
+	return (status == pdPASS);
+}
 /********************** end of file ******************************************/
