@@ -87,7 +87,7 @@ static void task_led(void *argument) {
 
 		if (pdPASS == xQueueReceive(hao->hqueue, &msg, portMAX_DELAY)) {
 
-			LOGGER_INFO("[LED] LED %d: mensaje recibido (msg=%d)", hao->color, msg);
+			LOGGER_INFO("[LED] LED %d: mensaje recibido (ID=%d)", hao->color, msg.id);
 			HAL_GPIO_WritePin(led_port_[hao->color], led_pin_[hao->color], LED_ON);
 		}
 		vTaskDelay((TickType_t)(TASK_PERIOD_MS_ / portTICK_PERIOD_MS));
