@@ -53,6 +53,16 @@ typedef enum
   AO_LED_MESSAGE__N,
 } ao_led_action_t;
 
+
+typedef struct
+{
+    int id;					/* seguimiento de ID de eventos al objeto activo */
+    ao_led_action_t action; 		/* accionamiento con el evento (mensaje) */
+//    ao_led_cb_t callback;
+//    int value;
+} ao_led_message_t;
+
+
 typedef enum
 {
   AO_LED_COLOR_RED,
@@ -70,7 +80,7 @@ typedef struct
 /********************** external functions declaration ***********************/
 
 void ao_led_init(ao_led_handle_t* hao, ao_led_color color);
-bool ao_led_send(ao_led_handle_t* hao, ao_led_action_t* msg);
+bool ao_led_send(ao_led_handle_t* hao, ao_led_message_t* msg);
 
 /********************** End of CPP guard *************************************/
 #ifdef __cplusplus

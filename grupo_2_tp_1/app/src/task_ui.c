@@ -53,12 +53,16 @@
 #define QUEUE_ITEM_SIZE_ 	(sizeof(msg_event_t))
 
 /********************** internal data declaration ****************************/
+typedef struct
+{
+    QueueHandle_t hqueue;
+} ao_ui_handle_t;
 
 /********************** internal functions declaration ***********************/
 
 /********************** internal data definition *****************************/
+static ao_ui_handle_t hao_;
 
-static QueueHandle_t hao_hqueue;
 
 /********************** external data definition *****************************/
 
@@ -72,27 +76,39 @@ extern ao_led_handle_t led_blue;
 
 static void task_ui(void *argument)
 {
+	int id = 0;
+
+    ao_led_message_t led_msg;
+    led_msg.id = id;
+    led_msg.action = AO_LED_MESSAGE_OFF;
+
+	ao_led_send(&led_red,   &led_msg);
+	ao_led_send(&led_green, &led_msg);
+	ao_led_send(&led_blue,  &led_msg);
 
 	while (true)
 	{
+	    led_msg.id = ++id;
+	    led_msg.action = AO_LED_MESSAGE_ON;
+
 		msg_event_t event_msg;
 
-		if (pdPASS == xQueueReceive(hao_hqueue, &event_msg, portMAX_DELAY))
+		if (pdPASS == xQueueReceive(hao_.hqueue, &event_msg, portMAX_DELAY))
 		{
 
 			switch (event_msg)
 			{
 				case MSG_EVENT_BUTTON_PULSE:
 					LOGGER_INFO("[UI] Enviando encendido de led rojo");
-					ao_led_send(&led_red, AO_LED_MESSAGE_ON);
+					ao_led_send(&led_red, &led_msg);
 					break;
 				case MSG_EVENT_BUTTON_SHORT:
 					LOGGER_INFO("[UI] Enviando encendido de led verde");
-					ao_led_send(&led_green, AO_LED_MESSAGE_ON);
+					ao_led_send(&led_green, &led_msg);
 					break;
 				case MSG_EVENT_BUTTON_LONG:
 					LOGGER_INFO("[UI] Enviando encendido de led azul");
-					ao_led_send(&led_blue, AO_LED_MESSAGE_ON);
+					ao_led_send(&led_blue, &led_msg);
 					break;
 				default:
 					break;
@@ -103,8 +119,8 @@ static void task_ui(void *argument)
 
 void ao_ui_init(void)
 {
-	hao_hqueue = xQueueCreate(QUEUE_LENGTH_, QUEUE_ITEM_SIZE_);
-	while (NULL == hao_hqueue) { /*error*/ }
+	hao_.hqueue = xQueueCreate(QUEUE_LENGTH_, QUEUE_ITEM_SIZE_);
+	while (NULL == hao_.hqueue) { /*error*/ }
 
 	BaseType_t status;
 	status = xTaskCreate(task_ui, "task_ao_ui", 128, NULL, tskIDLE_PRIORITY, NULL);
@@ -114,7 +130,7 @@ void ao_ui_init(void)
 bool ao_ui_send_event(msg_event_t msg)
 {
 
-	BaseType_t status = xQueueSend(hao_hqueue, &msg, 0);
+	BaseType_t status = xQueueSend(hao_.hqueue, &msg, 0);
 	if (status != pdPASS)
 	{
 

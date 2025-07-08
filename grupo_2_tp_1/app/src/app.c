@@ -69,7 +69,7 @@ void app_init(void)
 	ao_led_init(&led_blue, AO_LED_COLOR_BLUE);
 
 	status = xTaskCreate(task_button, "task_button", 128, NULL, tskIDLE_PRIORITY, NULL);
-	while (pdPASS != status) { }
+	while (pdPASS != status) { /* error */ }
 
 
 	LOGGER_INFO("app init");
