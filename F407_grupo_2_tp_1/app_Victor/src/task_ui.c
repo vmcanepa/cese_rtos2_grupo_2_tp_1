@@ -76,9 +76,21 @@ extern ao_led_handle_t led_blue;
 
 static void task_ui(void *argument)
 {
+	int id = 0;
+
+    ao_led_message_t led_msg;
+    led_msg.id = id;
+    led_msg.action = AO_LED_MESSAGE_OFF;
+
+	ao_led_send(&led_red,   &led_msg);
+	ao_led_send(&led_green, &led_msg);
+	ao_led_send(&led_blue,  &led_msg);
 
 	while (true)
 	{
+	    led_msg.id = ++id;
+	    led_msg.action = AO_LED_MESSAGE_ON;
+
 		msg_event_t event_msg;
 
 		if (pdPASS == xQueueReceive(hao_.hqueue, &event_msg, portMAX_DELAY))
@@ -88,15 +100,15 @@ static void task_ui(void *argument)
 			{
 				case MSG_EVENT_BUTTON_PULSE:
 					LOGGER_INFO("[UI] Enviando encendido de led rojo");
-					ao_led_send(&led_red, AO_LED_MESSAGE_ON);
+					ao_led_send(&led_red, &led_msg);
 					break;
 				case MSG_EVENT_BUTTON_SHORT:
 					LOGGER_INFO("[UI] Enviando encendido de led verde");
-					ao_led_send(&led_green, AO_LED_MESSAGE_ON);
+					ao_led_send(&led_green, &led_msg);
 					break;
 				case MSG_EVENT_BUTTON_LONG:
 					LOGGER_INFO("[UI] Enviando encendido de led azul");
-					ao_led_send(&led_blue, AO_LED_MESSAGE_ON);
+					ao_led_send(&led_blue, &led_msg);
 					break;
 				default:
 					break;

@@ -78,20 +78,22 @@ static void task_led(void *argument) {
 
 	ao_led_handle_t * hao = (ao_led_handle_t*)argument;
 
-	LOGGER_INFO("[LED] Cola de mensajes creada: color=%d, hqueue=%p", hao->color, (void *)hao->hqueue);
+//	LOGGER_INFO("[LED] Cola de mensajes creada: color=%d, hqueue=%p", hao->color, (void *)hao->hqueue);
 	HAL_GPIO_WritePin(led_port_[hao->color], led_pin_[hao->color], LED_OFF);
 
 	while (true) {
 
-		ao_led_message_t msg;
-
-		if (pdPASS == xQueueReceive(hao->hqueue, &msg, portMAX_DELAY)) {
-
-			LOGGER_INFO("[LED] LED %d: mensaje recibido (ID=%d)", hao->color, msg.id);
-			HAL_GPIO_WritePin(led_port_[hao->color], led_pin_[hao->color], LED_ON);
-		}
-		vTaskDelay((TickType_t)(TASK_PERIOD_MS_ / portTICK_PERIOD_MS));
-		HAL_GPIO_WritePin(led_port_[hao->color], led_pin_[hao->color], LED_OFF);
+	    ao_led_message_t msg;
+	    if (pdPASS == xQueueReceive(hao->hqueue, &msg, portMAX_DELAY))
+	    {
+	      if(AO_LED_MESSAGE_ON == msg.action) {
+	  		  LOGGER_INFO("[LED] LED %d: mensaje ON recibido (ID=%d)", hao->color, msg.id);
+	          HAL_GPIO_WritePin(led_port_[hao->color], led_pin_[hao->color], LED_ON);
+	  		  vTaskDelay((TickType_t)(TASK_PERIOD_MS_ / portTICK_PERIOD_MS));
+	  		  LOGGER_INFO("[LED] LED %d: se termina el tiempo de encendido (ID=%d)", hao->color, msg.id);
+	  		  HAL_GPIO_WritePin(led_port_[hao->color], led_pin_[hao->color], LED_OFF);
+	      }
+	    }
 	}
 }
 
@@ -109,15 +111,15 @@ void ao_led_init(ao_led_handle_t *hao, ao_led_color color) {
 
 bool ao_led_send(ao_led_handle_t *hao, ao_led_message_t *msg) {
 
-	LOGGER_INFO("[LED] Enviando mensaje a cola: color=%d, hqueue=%p", hao->color, (void *)hao->hqueue);
+	//LOGGER_INFO("[LED] Enviando mensaje a cola: color=%d, hqueue=%p", hao->color, (void *)hao->hqueue);
 	BaseType_t status = xQueueSend(hao->hqueue, (void *)msg, 0);
 
 	if (status != pdPASS) {
 
-		LOGGER_INFO("[LED] LED %d: cola llena (hqueue=%p), mensaje perdido (msg=%d)", hao->color, (void *)hao->hqueue, (int)msg);
+		LOGGER_INFO("[LED] LED %d: cola llena (hqueue=%p), mensaje perdido (ID=%d)", hao->color, (void *)hao->hqueue, (int)msg->id);
 	} else {
 
-		LOGGER_INFO("[LED] LED %d: mensaje enviado (msg=%d)", hao->color, (int)msg);
+		LOGGER_INFO("[LED] LED %d: mensaje enviado (ID=%d)", hao->color, (int)msg->id);
 	}
 	return (status == pdPASS);
 }
