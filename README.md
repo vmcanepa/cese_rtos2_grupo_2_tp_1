@@ -1,4 +1,4 @@
-# Repositorio ejemplo de entrega de TP 1 del grupo 2
+# Repositorio de TP 1 del grupo 2 - Sistemas Operativos de Tiempo Real (II)
 
 ## Integrantes
 
